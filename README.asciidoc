@@ -59,7 +59,7 @@ is a bit more involved.
 
 Example output
 --------------
-image:example.png[Example]
+image:https://github.com/S714726/monkey-paint/raw/master/example.png[Example]
 
 Features for the far future
 ---------------------------

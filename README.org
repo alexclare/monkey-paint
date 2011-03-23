@@ -56,7 +56,7 @@ more RAM than it typically allocates (i.e. running the program with an
 argument resembling ~-Xmx2g~). Setting this preference through ~sbt~
 is a bit more involved.
 ** Example output
-[[./example.png]]
+[[example.png]]
 ** Features for the far future
 1. Output to disk at certain intervals or when finished iterating
 2. More brush stroke and color options

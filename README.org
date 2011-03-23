@@ -1,0 +1,67 @@
+#+TITLE:README
+#+LANGUAGE:  en
+#+OPTIONS:   H:3 num:nil toc:nil ^:t -:t f:t *:t <:t skip:nil
+#+OPTIONS:   author:nil email:nil creator:nil timestamp:nil
+* Monkey Paint
+It has been said that a large collection of monkeys, paired with
+typewriters and given enough time, could recreate the works of
+Shakespeare. Now, imagine that these monkeys had the help of a demon,
+one already familiar with Shakespeare, that held their hands back and
+prevented them from hitting the typewriter keys whenever they were
+about to make any particularly poor choices of letters or words. The
+monkeys would surely be on their way to writing more accurate iambs,
+and perhaps their work would converge to Shakespeare sooner than it
+would by randomly jamming on the keys. But before converging, before
+accurately reproducing Shakespeare, there would be something in the
+middle---part Shakespeare, feces, banana peel, or random
+gibberish---that would be a mix of Shakespeare and the monkey. Because
+we already have the final product courtesy of Mr. Shakespeare himself,
+we're more interested in examining the intermediate.
+
+Replace written works with paintings and Shakespeare with your artist
+of choice, and you have the premise of this program. Like apprentice
+painters of yore, the monkey painter has a unique brush style of its
+own, and will try to recreate the masterpiece you put in front of
+it. But only with the help of the demon will it come close; even then,
+the not-so-subtle differences between its brush strokes and the
+original image will give its painting a different character. Not to
+mention what will appear to be a widespread blur effect.
+
+The program uses a simulated annealing algorithm as a manifestation of
+the demon, but because of the nature of the problem, the results look
+more like hill-climbing---outside of the initial splattering of the
+canvas.
+** Installation
+Download the standalone jar and run directly, or
+
+1. Download [[http://www.processing.org][Processing]] and copy or link its ~lib/core.jar~ to the
+   project's ~lib/~ directory
+2. Install [[http://code.google.com/p/simple-build-tool/][sbt]] and build/run the project with ~sbt run~ from the
+   project directory
+** Usage
+1. Select an image to reproduce by either clicking the "Open" button
+   or typing out the path manually in the long box next to it
+2. Optionally, adjust the width and/or height of the canvas by
+   providing them in the boxes to the right
+3. Select a brush style from the tabs below; each tab yields options
+   specific to that style, which can be altered to taste
+4. Click the start button on the right to begin whipping the monkeys
+   who in turn begin painting
+
+There are more options on the left, useful for obtaining repeatable
+results and capturing them as screen shots.
+
+Additionally, depending on the image size, the JVM may require a bit
+more RAM than it typically allocates (i.e. running the program with an
+argument resembling ~-Xmx2g~). Setting this preference through ~sbt~
+is a bit more involved.
+** Example output
+[[./example.png]]
+** Features for the far future
+1. Output to disk at certain intervals or when finished iterating
+2. More brush stroke and color options
+3. Implementation of some brush strokes with vector graphics
+** License
+Copyright (C) 2009-2011 S714726
+
+Distributed under the GNU General Public License version 3.

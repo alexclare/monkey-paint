@@ -9,9 +9,12 @@ import Utility._
 
 object MonkeyPaint extends SimpleSwingApplication {
   class MonkeyApplet extends PApplet {
-    val rng = RandomSeedField.text match {
-      case Int(i) => new Random(i)
-      case _ => new Random()
+    val rng = {
+      val seed: Option[Int] = optional(RandomSeedField.text) 
+      seed match {
+        case Some(i) => new Random(i)
+        case None    => new Random()
+      }
     }
 
     val anneal = new Anneal {
@@ -30,8 +33,9 @@ object MonkeyPaint extends SimpleSwingApplication {
 
       val original = loadImage(InputImageField.text)
       val (scaleWidth, scaleHeight) = 
-        scaleDims(original.width, original.height, InputWidthField.text,
-                  InputHeightField.text)
+        scaleDims(original.width, original.height,
+                  optional(InputWidthField.text),
+                  optional(InputHeightField.text))
       original.resize(scaleWidth,scaleHeight)
       original.loadPixels
       size(scaleWidth,scaleHeight)
@@ -56,20 +60,19 @@ object MonkeyPaint extends SimpleSwingApplication {
           case _ => Seq()
         }
         Brushes.selection.index match {
-          case 0 => new RandomWalk(rng, Point(width, height),
-                                   intOrElse(fields(0), 200),
-                                   intOrElse(fields(1), 1))
-          case 1 => new SquareBrush(rng, Point(width, height),
-                                    intOrElse(fields(0), 14))
-          case 2 => new IsocelesBrush(rng, Point(width, height),
-                                      intOrElse(fields(0), 8),
-                                      intOrElse(fields(1), 16))
-
+          case 0 => new RandomWalk(
+            rng, Point(width, height), orElse(fields(0), 200),
+            orElse(fields(1), 1))
+          case 1 => new SquareBrush(
+            rng, Point(width, height), orElse(fields(0), 14))
+          case 2 => new IsocelesBrush(
+            rng, Point(width, height), orElse(fields(0), 8),
+            orElse(fields(1), 16))
           case _ => new RandomWalk(rng, Point(width, height), 200, 1)
         }
       }
 
-      val maxIterations = intOrElse(MaxIterField.text, -1)
+      val maxIterations = orElse(MaxIterField.text, -1)
       Scheduler.execute(new Runnable {
         def run() {
           while (maxIterations <= 0 || anneal.iterations < maxIterations) {
@@ -140,7 +143,6 @@ Dialog box components and other GUI stuff below!
     ("Triangle", new FlowPanel(
       new Label("Base"), new TextField("8", 3),
       new Label("Height"), new TextField("16", 3)))
-    //,("Stamp",new FlowPanel())
   )
   val Brushes = new TabbedPane() {
     border = Swing.TitledBorder(Swing.LineBorder(Color.black), "Brush Style")

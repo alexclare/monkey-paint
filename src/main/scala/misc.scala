@@ -15,32 +15,31 @@ object RGBColor {
 }
 
 object Utility {
-  def scaleDims(actualWidth: Int, actualHeight: Int,
-                scaledWidth: String, scaledHeight: String): (Int, Int) =
+  def scaleDims(actualWidth: Int, actualHeight: Int, scaledWidth: Option[Int],
+                scaledHeight: Option[Int]): (Int, Int) =
     scaledWidth match {
-      case Int(w) => scaledHeight match {
-        case Int(h) => (w, h)
-        case _      => (w, w*actualHeight/actualWidth)
+      case Some(w) => scaledHeight match {
+        case Some(h) => (w, h)
+        case None    => (w, w*actualHeight/actualWidth)
       }
-      case _ => scaledHeight match {
-        case Int(h) => (h*actualWidth/actualHeight, h)
-        case _      => (actualWidth, actualHeight)
+      case None => scaledHeight match {
+        case Some(h) => (h*actualWidth/actualHeight, h)
+        case None    => (actualWidth, actualHeight)
       }
   }
-  
-  def intOrElse(str: String, default: Int): Int = str match {
-    case Int(i) => i
-    case _ => default
+
+  def optional[A](str: String)(implicit cfn: String => A): Option[A] = {
+    try {
+      Some(cfn(str))
+    } catch {
+      case _ => None
+    }
   }
+
+  def orElse[A](str: String, default: A)(implicit cfn: String => A): A =
+    optional(str).getOrElse(default)
+
+  implicit def ToInt(s: String): Int = augmentString(s).toInt
+  implicit def ToDouble(s: String): Double = augmentString(s).toDouble
 }
 
-object Int {
-  def unapply(str: String): Option[Int] = {
-    try {
-      Some(str.toInt)
-    }
-    catch {
-      case ex: NumberFormatException => None
-    }
-  }
-}

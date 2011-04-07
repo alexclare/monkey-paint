@@ -7,6 +7,18 @@ import processing.core._
 
 import Utility._
 
+class FileOpenButton(dumpField: TextField) extends Button {
+  val chooser = new FileChooser
+  action = Action("Open...") {
+    chooser.showOpenDialog(null) match {
+      case FileChooser.Result.Approve => {
+        dumpField.text = chooser.selectedFile.getPath
+      }
+      case _ =>
+    }
+  }
+}
+
 object MonkeyPaint extends SimpleSwingApplication {
   class MonkeyApplet extends PApplet {
     implicit val me: PApplet = this
@@ -52,6 +64,8 @@ object MonkeyPaint extends SimpleSwingApplication {
         val fields = Brushes.pages(Brushes.selection.index).content match {
           case p: Panel => (for (component <- p.contents)
                             yield component match {
+                              case cb: CheckBox => if (cb.selected)
+                                Some("true") else Some("false")
                               case tf: TextField => Some(tf.text)
                               case _ => None
                             }).flatten
@@ -66,6 +80,12 @@ object MonkeyPaint extends SimpleSwingApplication {
           case 2 => new IsocelesBrush(
             rng, Point(width, height), orElse(fields(0), 8),
             orElse(fields(1), 16))
+          case 3 => {
+            val img = loadAndScale(fields(0), fields(1), fields(2))
+            new StampBrush(rng, Point(width, height), img,
+                           orElse(fields(3), 0.5),
+                           if (fields(4) == "true") true else false)
+          }
           case _ => new RandomWalk(rng, Point(width, height), 200, 1)
         }
       }
@@ -112,17 +132,6 @@ Dialog box components and other GUI stuff below!
 */
 
   val InputImageField = new TextField("", 50)
-  val OpenInputButton = new Button {
-    val chooser = new FileChooser
-    action = Action("Open...") {
-      chooser.showOpenDialog(null) match {
-        case FileChooser.Result.Approve => {
-          InputImageField.text = chooser.selectedFile.getPath
-        }
-        case _ =>
-      }
-    }
-  }
   val InputWidthField = new TextField("", 4)
   val InputHeightField = new TextField("", 4)
 
@@ -140,8 +149,16 @@ Dialog box components and other GUI stuff below!
       new Label("Width"), new TextField("14", 3))),
     ("Triangle", new FlowPanel(
       new Label("Base"), new TextField("8", 3),
-      new Label("Height"), new TextField("16", 3)))
-  )
+      new Label("Height"), new TextField("16", 3))),
+    ("Stamp", new FlowPanel {
+      val FileField = new TextField("", 20)
+      contents.append(
+        new FileOpenButton(FileField), FileField,
+        new Label("Width"), new TextField("", 3),
+        new Label("Height"), new TextField("", 3),
+        new Label("Threshold"), new TextField("0.5", 3),
+        new CheckBox("Invert"))
+    }))
   val Brushes = new TabbedPane() {
     border = Swing.TitledBorder(Swing.LineBorder(Color.black), "Brush Style")
     BrushOptions.foreach((x) => this.pages += new TabbedPane.Page(x._1, x._2))
@@ -162,19 +179,19 @@ Dialog box components and other GUI stuff below!
     contents = new BorderPanel {
       import BorderPanel._
       add(new FlowPanel(
-        OpenInputButton, InputImageField,
+        new FileOpenButton(InputImageField), InputImageField, 
         new Label("Width"), InputWidthField,
         new Label("Height"), InputHeightField) {
-          border = Swing.TitledBorder(Swing.LineBorder(Color.black),
-                                      "Input Image")
+          border = Swing.TitledBorder(
+            Swing.LineBorder(Color.black),"Input Image")
         }, Position.North)
 
       add(new GridPanel(3, 2) {
         contents.append(new Label("Random Seed"), RandomSeedField,
                         new Label("Max iterations"), MaxIterField,
                         StatusCheckbox)
-        border = Swing.TitledBorder(Swing.LineBorder(Color.black),
-                                    "Miscellaneous")
+        border = Swing.TitledBorder(
+          Swing.LineBorder(Color.black), "Miscellaneous")
       }, Position.West)
 
       add(Brushes, Position.Center)

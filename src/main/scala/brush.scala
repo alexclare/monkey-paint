@@ -1,7 +1,7 @@
 import scala.math
 import scala.util.Random
 
-//import processing.core._
+import processing.core._
 
 case class Point(x: Int, y: Int)
 
@@ -91,8 +91,8 @@ trait StaticBrush extends Brush {
 }
 
 
-class RandomWalk (r: Random, dims: Point, steps: Int,
-                  thickness: Int) extends Brush(r, dims)
+class RandomWalk (r: Random, dims: Point,
+                  steps: Int, thickness: Int) extends Brush(r, dims)
 with RandomTranslate with RandomColor {
   def stroke = super.stroke(RGBColor(0, 0, 0), {
     import scala.collection.mutable.ArrayBuffer
@@ -129,31 +129,28 @@ with RandomColor with StaticBrush {
   } yield Point(x,y)).toSet
 }
 
-class SquareBrush (r: Random, dims: Point, size: Int) extends Brush(r, dims)
+class SquareBrush (r: Random, dims: Point,
+                   size: Int) extends Brush(r, dims)
 with RandomTranslate with RandomRotate with RandomColor with StaticBrush {
   override val rotationRange = (0, math.Pi/2.0)
   val points = (for (x <- -size/2 to size/2; y <- -size/2 to size/2)
                 yield Point(x, y)).toSet
 }
 
-/* TODO: clean up inverse/not and implement in GUI
 class StampBrush (r: Random, dims: Point,
                   image: PImage, threshold: Double,
                   inverse: Boolean) extends Brush(r, dims)
 with RandomTranslate with RandomRotate with Translate 
 with RandomColor with StaticBrush {
-  val (dx, dy) = (0, -image.height/2)
+  val (dx, dy) = (-image.width/2, -image.height/2)
   val points = {
-    val bw = new PImage(image.width, image.height)
-    bw.copy(image, 0, 0, image.width, image.height,
-            0, 0, image.width, image.height)
-    bw.filter(PConstants.THRESHOLD, threshold.toFloat)
-    bw.loadPixels
+    image.filter(PConstants.THRESHOLD, threshold.toFloat)
+    image.loadPixels
     (for {
       x <- 0 until image.width
       y <- 0 until image.height
-      if (((bw.pixels(x + y*image.width) & 0xFF) > 0) ^ inverse)
+      if (((image.pixels(x + y*image.width) & 0xFF) > 0) == inverse)
     } yield Point(x,y)).toSet
   }
 }
-*/
+

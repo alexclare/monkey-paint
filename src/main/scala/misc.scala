@@ -1,3 +1,5 @@
+import processing.core._
+
 case class RGBColor(Red: Int, Green: Int, Blue: Int)
 object RGBColor {
   def apply(p: Int): RGBColor =
@@ -15,6 +17,15 @@ object RGBColor {
 }
 
 object Utility {
+  def loadAndScale(image: String, width: String,
+                   height: String)(implicit applet: PApplet): PImage = {
+    val img = applet.loadImage(image)
+    val (scaleWidth, scaleHeight) =
+      scaleDims(img.width, img.height, optional(width), optional(height))
+    img.resize(scaleWidth, scaleHeight)
+    img
+  }
+
   def scaleDims(actualWidth: Int, actualHeight: Int, scaledWidth: Option[Int],
                 scaledHeight: Option[Int]): (Int, Int) =
     scaledWidth match {

@@ -9,6 +9,8 @@ import Utility._
 
 object MonkeyPaint extends SimpleSwingApplication {
   class MonkeyApplet extends PApplet {
+    implicit val me: PApplet = this
+
     val rng = {
       val seed: Option[Int] = optional(RandomSeedField.text) 
       seed match {
@@ -31,14 +33,10 @@ object MonkeyPaint extends SimpleSwingApplication {
     override def setup() {
       frame.setTitle(InputImageField.text)
 
-      val original = loadImage(InputImageField.text)
-      val (scaleWidth, scaleHeight) = 
-        scaleDims(original.width, original.height,
-                  optional(InputWidthField.text),
-                  optional(InputHeightField.text))
-      original.resize(scaleWidth,scaleHeight)
+      val original = loadAndScale(InputImageField.text, InputWidthField.text,
+                                  InputHeightField.text)
       original.loadPixels
-      size(scaleWidth,scaleHeight)
+      size(original.width, original.height)
 
       painting = createImage(width, height, PConstants.RGB)
       painting.loadPixels

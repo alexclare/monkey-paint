@@ -26,7 +26,7 @@ mention what will appear to be a widespread blur effect.
 
 The program uses a simulated annealing algorithm as a manifestation of
 the demon, but because of the nature of the problem, the results look
-more like hill-climbing---outside of the initial splattering of the
+more like hill-climbing--outside of the initial splattering of the
 canvas.
 
 Installation
@@ -66,6 +66,7 @@ Features for the far future
 . Output to disk at certain intervals or when finished iterating
 . More brush stroke and color options
 . Implementation of some brush strokes with vector graphics
+. Tweak the annealing threshold parameter based on the initial image and brush
 
 License
 -------

@@ -6,7 +6,7 @@ object RGBColor {
     RGBColor(p >> 16 & 0xFF, p >> 8 & 0xFF, p & 0xFF)
 
   implicit def toInt(c: RGBColor): Int =
-    (c.Red << 16) + (c.Green << 8) + c.Blue
+    (c.Red << 16) | (c.Green << 8) | c.Blue | 0xFF000000
 
   def distance(a: RGBColor, b: RGBColor): Long = {
     val dr = a.Red - b.Red

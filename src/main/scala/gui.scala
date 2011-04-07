@@ -39,8 +39,7 @@ object MonkeyPaint extends SimpleSwingApplication {
     val displayStatus: Boolean = StatusCheckbox.selected
     var done = false
 
-    // Processing has to wait until setup() to create images
-    var painting: PImage = null
+    val painting = createGraphics(140, 140, PConstants.P3D)
 
     override def setup() {
       frame.setTitle(InputImageField.text)
@@ -50,11 +49,15 @@ object MonkeyPaint extends SimpleSwingApplication {
       original.loadPixels
       size(original.width, original.height)
 
-      painting = createImage(width, height, PConstants.RGB)
-      painting.loadPixels
+      painting.setSize(original.width, original.height)
+      painting.beginDraw()
+      painting.loadPixels()
       val white: Int = RGBColor(255, 255, 255)
-      (0 until width*height).foreach(painting.pixels(_) = white)
-      painting.updatePixels
+      for (i <- 0 until original.width * original.height) {
+        painting.pixels(i) = white
+      }
+      painting.updatePixels()
+      painting.endDraw()
 
       val font = loadFont("DejaVuSansCondensed-14.vlw")
       textFont(font, 14)
@@ -100,8 +103,10 @@ object MonkeyPaint extends SimpleSwingApplication {
                      RGBColor.distance(RGBColor(original.pixels(p)),
                                        RGBColor(painting.pixels(p)))
             }.sum) {
+              painting.beginDraw()
               points.foreach((p) => painting.pixels(p) = color)
-              painting.updatePixels
+              painting.updatePixels()
+              painting.endDraw()
             }
           }
           done = true

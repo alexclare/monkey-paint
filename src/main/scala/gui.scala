@@ -1,4 +1,5 @@
 import java.awt.Color
+import java.io.File
 import scala.actors.Scheduler
 import scala.swing._
 import scala.util.Random
@@ -7,12 +8,18 @@ import processing.core._
 
 import Utility._
 
-class FileOpenButton(dumpField: TextField) extends Button {
-  val chooser = new FileChooser
+class FileOpenButton(dumpField: TextField,
+                     directory: Boolean) extends Button {
+  val chooser = new FileChooser {
+    fileSelectionMode =
+      if (directory) FileChooser.SelectionMode.DirectoriesOnly
+      else FileChooser.SelectionMode.FilesOnly
+  }
   action = Action("Open...") {
     chooser.showOpenDialog(null) match {
       case FileChooser.Result.Approve => {
-        dumpField.text = chooser.selectedFile.getPath
+        dumpField.text = chooser.selectedFile.getPath + (
+          if (directory) File.separator else "")
       }
       case _ =>
     }
@@ -37,6 +44,7 @@ object MonkeyPaint extends SimpleSwingApplication {
     }
 
     val displayStatus: Boolean = StatusCheckbox.selected
+    val displayImage: Boolean = DisplayCheckbox.selected
     var done = false
 
     val painting = createGraphics(140, 140, PConstants.P3D)
@@ -44,10 +52,17 @@ object MonkeyPaint extends SimpleSwingApplication {
     override def setup() {
       frame.setTitle(InputImageField.text)
 
-      val original = loadAndScale(InputImageField.text, InputWidthField.text,
-                                  InputHeightField.text)
+      val original = loadAndScale(
+        InputImageField.text, InputWidthField.text, InputHeightField.text)
       original.loadPixels
-      size(original.width, original.height)
+
+      if (displayImage)
+        size(original.width, original.height)
+      else {
+        // Just a bit larger than Processing's minimum window size
+        size(140, 140)
+        background(255, 255, 255)
+      }
 
       painting.setSize(original.width, original.height)
       painting.beginDraw()
@@ -76,46 +91,62 @@ object MonkeyPaint extends SimpleSwingApplication {
         }
         Brushes.selection.index match {
           case 0 => new RandomWalk(
-            rng, Point(width, height), orElse(fields(0), 200),
-            orElse(fields(1), 1))
+            rng, Point(original.width, original.height),
+            orElse(fields(0), 200), orElse(fields(1), 1))
           case 1 => new SquareBrush(
-            rng, Point(width, height), orElse(fields(0), 14))
+            rng, Point(original.width, original.height),
+            orElse(fields(0), 14))
           case 2 => new IsocelesBrush(
-            rng, Point(width, height), orElse(fields(0), 8),
-            orElse(fields(1), 16))
+            rng, Point(original.width, original.height),
+            orElse(fields(0), 8), orElse(fields(1), 16))
           case 3 => {
             val img = loadAndScale(fields(0), fields(1), fields(2))
-            new StampBrush(rng, Point(width, height), img,
-                           orElse(fields(3), 0.5),
-                           if (fields(4) == "true") true else false)
+            new StampBrush(
+              rng, Point(original.width, original.height),
+              img, orElse(fields(3), 0.5),
+              if (fields(4) == "true") true else false)
           }
-          case _ => new RandomWalk(rng, Point(width, height), 200, 1)
+          case _ => new RandomWalk(
+            rng, Point(original.width, original.height), 200, 1)
         }
       }
 
       val maxIterations = orElse(MaxIterField.text, -1)
-      Scheduler.execute(new Runnable {
-        def run() {
-          while (maxIterations <= 0 || anneal.iterations < maxIterations) {
-            val (color, points) = brush.stroke
-            anneal.step(points.map {
-              (p) => RGBColor.distance(RGBColor(original.pixels(p)), color) -
-                     RGBColor.distance(RGBColor(original.pixels(p)),
-                                       RGBColor(painting.pixels(p)))
-            }.sum) {
-              painting.beginDraw()
-              points.foreach((p) => painting.pixels(p) = color)
-              painting.updatePixels()
-              painting.endDraw()
+      val outputPath: String = OutputDirField.text
+      val outputInterval = orElse(OutputIntervalField.text, -1)
+      Scheduler.execute {
+        while (maxIterations <= 0 || anneal.iterations < maxIterations) {
+          val (color, points) = brush.stroke
+          anneal.step(points.map {
+            (p) => RGBColor.distance(RGBColor(original.pixels(p)), color) -
+            RGBColor.distance(RGBColor(original.pixels(p)),
+                              RGBColor(painting.pixels(p)))
+          }.sum) {
+            painting.beginDraw()
+            points.foreach((p) => painting.pixels(p) = color)
+            painting.updatePixels()
+            painting.endDraw()
+          }
+
+          if (outputInterval > 0 && anneal.iterations % outputInterval == 0) {
+            val img = createGraphics(
+              painting.width, painting.height, PConstants.P3D)
+            img.beginDraw()
+            img.copy(painting, 0, 0, painting.width, painting.height,
+                     0, 0, img.width, img.height)
+            img.endDraw()
+            Scheduler.execute {
+              img.save(outputPath + anneal.iterations + ".png")
             }
           }
-          done = true
-        }})
+        }
+        done = true
+      }
     }
 
     override def draw() {
-      // TODO: Add output to disk capability and make output to window optional
-      image(painting, 0, 0)
+      if (displayImage)
+        image(painting, 0, 0)
       if (displayStatus) {
         val str = anneal.toString
         fill(0, 0, 0)
@@ -146,6 +177,11 @@ Dialog box components and other GUI stuff below!
   val StatusCheckbox = new CheckBox("Status Display")
   StatusCheckbox.selected = true
 
+  val OutputDirField = new TextField("", 40)
+  val OutputIntervalField = new TextField("", 6)
+  val DisplayCheckbox = new CheckBox("Display Image")
+  DisplayCheckbox.selected = true
+
   val BrushOptions = List(
     ("Random Walk", new FlowPanel(
       new Label("Steps"), new TextField("200", 4),
@@ -158,7 +194,7 @@ Dialog box components and other GUI stuff below!
     ("Stamp", new FlowPanel {
       val FileField = new TextField("", 20)
       contents.append(
-        new FileOpenButton(FileField), FileField,
+        new FileOpenButton(FileField, false), FileField,
         new Label("Width"), new TextField("", 3),
         new Label("Height"), new TextField("", 3),
         new Label("Threshold"), new TextField("0.5", 3),
@@ -184,7 +220,7 @@ Dialog box components and other GUI stuff below!
     contents = new BorderPanel {
       import BorderPanel._
       add(new FlowPanel(
-        new FileOpenButton(InputImageField), InputImageField, 
+        new FileOpenButton(InputImageField, false), InputImageField, 
         new Label("Width"), InputWidthField,
         new Label("Height"), InputHeightField) {
           border = Swing.TitledBorder(
@@ -198,6 +234,14 @@ Dialog box components and other GUI stuff below!
         border = Swing.TitledBorder(
           Swing.LineBorder(Color.black), "Miscellaneous")
       }, Position.West)
+
+      add(new FlowPanel(
+        new FileOpenButton(OutputDirField, true), OutputDirField,
+        new Label("Interval"), OutputIntervalField,
+        DisplayCheckbox) {
+        border = Swing.TitledBorder(
+          Swing.LineBorder(Color.black), "Output")
+      }, Position.South)
 
       add(Brushes, Position.Center)
 

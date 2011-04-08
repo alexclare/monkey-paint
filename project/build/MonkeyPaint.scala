@@ -9,5 +9,6 @@ with ProguardProject {
   override def proguardInJars = super.proguardInJars +++ scalaLibraryPath
   override def proguardOptions = List(
     "-keep class MonkeyPaint$MonkeyApplet { *; }",
+    "-keep class processing.core.PGraphics3D { *; }",
     proguardKeepMain("MonkeyPaint"))
 }

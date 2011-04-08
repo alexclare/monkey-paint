@@ -236,6 +236,7 @@ Dialog box components and other GUI stuff below!
       }, Position.West)
 
       add(new FlowPanel(
+        new Label("Prefix"),
         new FileOpenButton(OutputDirField, true), OutputDirField,
         new Label("Interval"), OutputIntervalField,
         DisplayCheckbox) {

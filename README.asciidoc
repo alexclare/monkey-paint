@@ -40,17 +40,15 @@ Download the standalone jar and run directly, or
 
 Usage
 -----
-. Select an image to reproduce by either clicking the "Open" button or
-  typing out the path manually in the long box next to it
-. Optionally, adjust the width and/or height of the canvas by
-  providing them in the boxes to the right
-. Select a brush style from the tabs below; each tab yields options
-  specific to that style, which can be altered to taste
+. Select an image to reproduce by clicking the "Open" button in the
+  upper-left
+. Select a brush style from the tabs below
 . Click the start button on the right to begin whipping the monkeys
   who in turn begin painting
 
-There are more options on the left, useful for obtaining repeatable
-results and capturing them as screen shots.
+The program has a lot of options that can be adjusted to
+taste. "Reasonable" defaults are typically substituted for fields left
+empty.
 
 Additionally, depending on the image size, the JVM may require a bit
 more RAM than it typically allocates (i.e. running the program with an
@@ -63,10 +61,10 @@ image:https://github.com/S714726/monkey-paint/raw/master/example.png[Example]
 
 Features for the far future
 ---------------------------
-. Output to disk at certain intervals or when finished iterating
 . More brush stroke and color options
 . Implementation of some brush strokes with vector graphics
-. Tweak the annealing threshold parameter based on the initial image and brush
+. Tweak the annealing threshold parameter based on the initial image
+  and brush
 
 License
 -------

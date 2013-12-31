@@ -127,18 +127,12 @@ object MonkeyPaint extends SimpleSwingApplication {
       val outputPath: String = OutputDirField.text
       val outputInterval = orElse(OutputIntervalField.text, -1)
 
-      val strokes: Observable[(RGBColor, Set[Int])] = Observable {
-        (obs: Observer[(RGBColor, Set[Int])]) =>
-        val subs = BooleanSubscription()
-        while (!subs.isUnsubscribed) {
-          obs.onNext(brush.stroke)
-        }
-        obs.onCompleted()
-        subs
-      }
       val rate = 1 millisecond
+      val strokes: Observable[(RGBColor, Set[Int])] = Observable.interval(rate).map {
+        (x) => brush.stroke
+      }
 
-      strokes.sample(rate).subscribe({ (stroke: (RGBColor, Set[Int])) =>
+      strokes.subscribe({ (stroke: (RGBColor, Set[Int])) =>
         val (color, points) = stroke
         val score = points.map {
           (p) => RGBColor.distance(RGBColor(original.pixels(p)), color) -

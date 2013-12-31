@@ -1,4 +1,5 @@
 import scala.concurrent._
+import scala.concurrent.duration._
 import scala.swing._
 import scala.util.Random
 
@@ -7,6 +8,11 @@ import java.io.File
 import java.util.concurrent.Executors
 
 import processing.core._
+
+import rx.lang.scala.Observable
+import rx.lang.scala.Observer
+import rx.lang.scala.subscriptions.BooleanSubscription
+import rx.lang.scala.concurrency.Schedulers
 
 import Utility._
 
@@ -29,7 +35,9 @@ class FileOpenButton(dumpField: TextField,
 }
 
 object MonkeyPaint extends SimpleSwingApplication {
-  implicit val cxt = ExecutionContext.fromExecutorService(Executors.newFixedThreadPool(4))
+  val pool = Executors.newFixedThreadPool(4)
+  implicit val cxt = ExecutionContext.fromExecutorService(pool)
+  val scheduler = Schedulers.executor(pool)
 
   class MonkeyApplet extends PApplet {
     implicit val me: PApplet = this
@@ -118,19 +126,36 @@ object MonkeyPaint extends SimpleSwingApplication {
       val maxIterations = orElse(MaxIterField.text, -1)
       val outputPath: String = OutputDirField.text
       val outputInterval = orElse(OutputIntervalField.text, -1)
-      future {
-        while (maxIterations <= 0 || anneal.iterations < maxIterations) {
-          val (color, points) = brush.stroke
-          anneal.step(points.map {
-            (p) => RGBColor.distance(RGBColor(original.pixels(p)), color) -
-            RGBColor.distance(RGBColor(original.pixels(p)),
-                              RGBColor(painting.pixels(p)))
-          }.sum) {
-            painting.beginDraw()
-            points.foreach((p) => painting.pixels(p) = color)
-            painting.updatePixels()
-            painting.endDraw()
-          }
+
+      val strokes: Observable[(RGBColor, Set[Int])] = Observable {
+        (obs: Observer[(RGBColor, Set[Int])]) =>
+        val subs = BooleanSubscription()
+        while (!subs.isUnsubscribed) {
+          obs.onNext(brush.stroke)
+        }
+        obs.onCompleted()
+        subs
+      }
+      val rate = 1 millisecond
+
+      strokes.sample(rate).subscribe({ (stroke: (RGBColor, Set[Int])) =>
+        val (color, points) = stroke
+        val score = points.map {
+          (p) => RGBColor.distance(RGBColor(original.pixels(p)), color) -
+          RGBColor.distance(RGBColor(original.pixels(p)),
+            RGBColor(painting.pixels(p)))
+        }.sum
+        anneal.step(score) {
+          painting.beginDraw()
+          points.foreach((p) => painting.pixels(p) = color)
+          painting.updatePixels()
+          painting.endDraw()
+        }
+      }, scheduler)
+    }
+
+/*
+TODO add stop after N iterations and save-output-to-file
 
           if (outputInterval > 0 && anneal.iterations % outputInterval == 0) {
             val img = createGraphics(
@@ -143,10 +168,9 @@ object MonkeyPaint extends SimpleSwingApplication {
               img.save(outputPath + anneal.iterations + ".png")
             }
           }
-        }
+
         done = true
-      }
-    }
+*/
 
     override def draw() {
       if (displayImage)

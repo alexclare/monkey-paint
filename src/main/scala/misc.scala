@@ -48,7 +48,7 @@ object Utility {
   }
 
   def orElse[A](str: String, default: A)(implicit cfn: String => A): A =
-    optional(str).getOrElse(default)
+    optional(str)(cfn).getOrElse(default)
 
   implicit def ToInt(s: String): Int = augmentString(s).toInt
   implicit def ToDouble(s: String): Double = augmentString(s).toDouble

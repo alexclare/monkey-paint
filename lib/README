@@ -1,1 +1,1 @@
-Put Processing's (http://www.processing.org) core.jar here to compile with sbt
+Put the Processing 1.5.1 (not 2) core.jar here to compile with sbt

@@ -1,8 +1,10 @@
-import java.awt.Color
-import java.io.File
-import scala.actors.Scheduler
+import scala.concurrent._
 import scala.swing._
 import scala.util.Random
+
+import java.awt.Color
+import java.io.File
+import java.util.concurrent.Executors
 
 import processing.core._
 
@@ -27,6 +29,8 @@ class FileOpenButton(dumpField: TextField,
 }
 
 object MonkeyPaint extends SimpleSwingApplication {
+  implicit val cxt = ExecutionContext.fromExecutorService(Executors.newFixedThreadPool(4))
+
   class MonkeyApplet extends PApplet {
     implicit val me: PApplet = this
 
@@ -114,7 +118,7 @@ object MonkeyPaint extends SimpleSwingApplication {
       val maxIterations = orElse(MaxIterField.text, -1)
       val outputPath: String = OutputDirField.text
       val outputInterval = orElse(OutputIntervalField.text, -1)
-      Scheduler.execute {
+      future {
         while (maxIterations <= 0 || anneal.iterations < maxIterations) {
           val (color, points) = brush.stroke
           anneal.step(points.map {
@@ -135,7 +139,7 @@ object MonkeyPaint extends SimpleSwingApplication {
             img.copy(painting, 0, 0, painting.width, painting.height,
                      0, 0, img.width, img.height)
             img.endDraw()
-            Scheduler.execute {
+            future {
               img.save(outputPath + anneal.iterations + ".png")
             }
           }
@@ -207,10 +211,9 @@ Dialog box components and other GUI stuff below!
   
   val StartButton = new Button {
     action = Action("Start!") {
-      Scheduler.execute(new Runnable {
-        def run() {
-          PApplet.main(Array[String]("MonkeyPaint$MonkeyApplet"))
-        }})
+      future {
+        PApplet.main(Array[String]("MonkeyPaint$MonkeyApplet"))
+      }
       top.visible = false
     }
   }

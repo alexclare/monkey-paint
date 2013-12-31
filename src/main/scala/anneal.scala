@@ -26,12 +26,12 @@ abstract class Anneal {
 
   def lambda: Double = log(1 + floor(changes/threshold))
 
-  def step(delta: Long)(change: => Unit) {
+  def step(delta: Long): Boolean = {
     iterations += 1
     if (delta < 0 || exp(-lambda*delta) > generator.nextDouble) {
       changes += 1
-      change
-    }
+      true
+    } else false
   }
 
   override def toString: String = "" + changes + "/" + iterations

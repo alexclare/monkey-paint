@@ -36,7 +36,6 @@ class FileOpenButton(dumpField: TextField,
 
 object MonkeyPaint extends SimpleSwingApplication {
   val pool = Executors.newFixedThreadPool(4)
-  implicit val cxt = ExecutionContext.fromExecutorService(pool)
   val scheduler = Schedulers.executor(pool)
 
   class MonkeyApplet extends PApplet {
@@ -128,24 +127,23 @@ object MonkeyPaint extends SimpleSwingApplication {
       val outputInterval = orElse(OutputIntervalField.text, -1)
 
       val rate = 1 millisecond
-      val strokes: Observable[(RGBColor, Set[Int])] = Observable.interval(rate).map {
+      val strokes = Observable.interval(rate).map {
         (x) => brush.stroke
       }
 
-      strokes.subscribe({ (stroke: (RGBColor, Set[Int])) =>
-        val (color, points) = stroke
-        val score = points.map {
-          (p) => RGBColor.distance(RGBColor(original.pixels(p)), color) -
-          RGBColor.distance(RGBColor(original.pixels(p)),
-            RGBColor(painting.pixels(p)))
-        }.sum
-        anneal.step(score) {
+      def score(color: RGBColor, points: Set[Int], current: PGraphics) = points.map { (p) =>
+        RGBColor.distance(RGBColor(original.pixels(p)), color) -
+        RGBColor.distance(RGBColor(original.pixels(p)), RGBColor(current.pixels(p)))
+      }.sum
+
+      strokes.filter((x: (RGBColor, Set[Int])) => anneal.step(score(x._1, x._2, painting)))
+        .subscribe({ (stroke: (RGBColor, Set[Int])) =>
+          val (color, points) = stroke
           painting.beginDraw()
           points.foreach((p) => painting.pixels(p) = color)
           painting.updatePixels()
           painting.endDraw()
-        }
-      }, scheduler)
+        }, scheduler)
     }
 
 /*
@@ -229,9 +227,7 @@ Dialog box components and other GUI stuff below!
   
   val StartButton = new Button {
     action = Action("Start!") {
-      future {
-        PApplet.main(Array[String]("MonkeyPaint$MonkeyApplet"))
-      }
+      scheduler.schedule(PApplet.main(Array[String]("MonkeyPaint$MonkeyApplet")))
       top.visible = false
     }
   }

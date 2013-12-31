@@ -1,3 +1,7 @@
+*Important Stuff:* I've been trying out Rx observables (c/o Netflix) on
+this guinea pig here. The code is old, rusty, and convoluted, but things
+are looking cool.
+
 Monkey Paint
 ------------
 It has been said that a large collection of monkeys, paired with

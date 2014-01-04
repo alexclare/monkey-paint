@@ -4,6 +4,7 @@ import scala.util.Random
 import processing.core._
 
 case class Point(x: Int, y: Int)
+case class BrushStroke(color: RGBColor, points: Set[Int])
 
 /** The base Brush class ensures that the random-number generator is shared
  *    and that the points returned by each stroke are bounded by the
@@ -13,13 +14,12 @@ abstract class Brush (val rng: Random, dims: Point) {
   val width = dims.x
   val height = dims.y
 
-  def stroke: (RGBColor, Set[Int])
+  def stroke: BrushStroke
 
-  def stroke(color: RGBColor, points: Set[Point]) = {
-    (color, points.filter {
+  def stroke(color: RGBColor, points: Set[Point]) = BrushStroke(color,
+    points.filter {
       (p) => p.x >= 0 && p.y >= 0 && p.x < width && p.y < height
-      }.map((p) => p.x + width*p.y))
-  }
+    }.map((p) => p.x + width*p.y))
 }
 
 /** Performs a fixed (dx, dy) translation on the brush stroke

@@ -131,16 +131,15 @@ object MonkeyPaint extends SimpleSwingApplication {
         (x) => brush.stroke
       }
 
-      def score(color: RGBColor, points: Set[Int], current: PGraphics) = points.map { (p) =>
-        RGBColor.distance(RGBColor(original.pixels(p)), color) -
+      def score(stroke: BrushStroke, current: PGraphics) = stroke.points.map { (p) =>
+        RGBColor.distance(RGBColor(original.pixels(p)), stroke.color) -
         RGBColor.distance(RGBColor(original.pixels(p)), RGBColor(current.pixels(p)))
       }.sum
 
-      strokes.filter((x: (RGBColor, Set[Int])) => anneal.step(score(x._1, x._2, painting)))
-        .subscribe({ (stroke: (RGBColor, Set[Int])) =>
-          val (color, points) = stroke
+      strokes.filter((bs: BrushStroke) => anneal.step(score(bs, painting)))
+        .subscribe({ (stroke: BrushStroke) =>
           painting.beginDraw()
-          points.foreach((p) => painting.pixels(p) = color)
+          stroke.points.foreach((p) => painting.pixels(p) = stroke.color)
           painting.updatePixels()
           painting.endDraw()
         }, scheduler)

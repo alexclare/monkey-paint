@@ -126,6 +126,7 @@ object MonkeyPaint extends SimpleSwingApplication {
       val outputPath: String = OutputDirField.text
       val outputInterval = orElse(OutputIntervalField.text, -1)
 
+      // Generate brush strokes every millisecond (from what I can tell, it can keep up)
       val rate = 1 millisecond
       val indexedStrokes = Observable.interval(rate).map {
         (x) => (x, brush.stroke)
@@ -136,21 +137,25 @@ object MonkeyPaint extends SimpleSwingApplication {
         RGBColor.distance(RGBColor(original.pixels(p)), RGBColor(current.pixels(p)))
       }.sum
 
-      indexedStrokes.subscribe({ (ibs: (Long, BrushStroke)) =>
-        if (outputInterval > 0 && ibs._1 % outputInterval == 0) {
-          val img = createGraphics(
-            painting.width, painting.height, PConstants.P3D)
-          img.beginDraw()
-          img.copy(painting, 0, 0, painting.width, painting.height,
-            0, 0, img.width, img.height)
-          img.endDraw()
-          val iter = anneal.iterations
-          scheduler.schedule {
-            img.save(outputPath + iter + ".png")
+      // Output the current buffer at a specific interval, if desired
+      if (outputInterval > 0) {
+        indexedStrokes.subscribe { (ibs: (Long, BrushStroke)) =>
+          if (ibs._1 % outputInterval == 0) {
+            val img = createGraphics(
+              painting.width, painting.height, PConstants.P3D)
+            img.beginDraw()
+            img.copy(painting, 0, 0, painting.width, painting.height,
+              0, 0, img.width, img.height)
+            img.endDraw()
+            val iter = anneal.iterations
+            scheduler.schedule {
+              img.save(outputPath + iter + ".png")
+            }
           }
         }
-      })
+      }
 
+      // Draw "good" strokes directly to the buffer
       indexedStrokes.filter({ (ibs: (Long, BrushStroke)) =>
         anneal.step(score(ibs._2, painting))
       }).subscribe({ (ibs: (Long, BrushStroke)) =>

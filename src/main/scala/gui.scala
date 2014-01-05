@@ -127,8 +127,8 @@ object MonkeyPaint extends SimpleSwingApplication {
       val outputInterval = orElse(OutputIntervalField.text, -1)
 
       val rate = 1 millisecond
-      val strokes = Observable.interval(rate).map {
-        (x) => brush.stroke
+      val indexedStrokes = Observable.interval(rate).map {
+        (x) => (x, brush.stroke)
       }
 
       def score(stroke: BrushStroke, current: PGraphics) = stroke.points.map { (p) =>
@@ -136,30 +136,33 @@ object MonkeyPaint extends SimpleSwingApplication {
         RGBColor.distance(RGBColor(original.pixels(p)), RGBColor(current.pixels(p)))
       }.sum
 
-      strokes.filter((bs: BrushStroke) => anneal.step(score(bs, painting)))
-        .subscribe({ (stroke: BrushStroke) =>
-          painting.beginDraw()
-          stroke.points.foreach((p) => painting.pixels(p) = stroke.color)
-          painting.updatePixels()
-          painting.endDraw()
-        }, scheduler)
+      indexedStrokes.subscribe({ (ibs: (Long, BrushStroke)) =>
+        if (outputInterval > 0 && ibs._1 % outputInterval == 0) {
+          val img = createGraphics(
+            painting.width, painting.height, PConstants.P3D)
+          img.beginDraw()
+          img.copy(painting, 0, 0, painting.width, painting.height,
+            0, 0, img.width, img.height)
+          img.endDraw()
+          val iter = anneal.iterations
+          scheduler.schedule {
+            img.save(outputPath + iter + ".png")
+          }
+        }
+      })
+
+      indexedStrokes.filter({ (ibs: (Long, BrushStroke)) =>
+        anneal.step(score(ibs._2, painting))
+      }).subscribe({ (ibs: (Long, BrushStroke)) =>
+        painting.beginDraw()
+        ibs._2.points.foreach((p) => painting.pixels(p) = ibs._2.color)
+        painting.updatePixels()
+        painting.endDraw()
+      }, scheduler)
     }
 
 /*
-TODO add stop after N iterations and save-output-to-file
-
-          if (outputInterval > 0 && anneal.iterations % outputInterval == 0) {
-            val img = createGraphics(
-              painting.width, painting.height, PConstants.P3D)
-            img.beginDraw()
-            img.copy(painting, 0, 0, painting.width, painting.height,
-                     0, 0, img.width, img.height)
-            img.endDraw()
-            future {
-              img.save(outputPath + anneal.iterations + ".png")
-            }
-          }
-
+TODO add stop after N iterations
         done = true
 */
 

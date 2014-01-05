@@ -139,18 +139,17 @@ object MonkeyPaint extends SimpleSwingApplication {
 
       // Output the current buffer at a specific interval, if desired
       if (outputInterval > 0) {
-        indexedStrokes.subscribe { (ibs: (Long, BrushStroke)) =>
-          if (ibs._1 % outputInterval == 0) {
-            val img = createGraphics(
-              painting.width, painting.height, PConstants.P3D)
-            img.beginDraw()
-            img.copy(painting, 0, 0, painting.width, painting.height,
-              0, 0, img.width, img.height)
-            img.endDraw()
-            val iter = anneal.iterations
-            scheduler.schedule {
-              img.save(outputPath + iter + ".png")
-            }
+        indexedStrokes.filter { (ibs: (Long, BrushStroke)) =>
+          ibs._1 % outputInterval == 0
+        }.subscribe { (ibs: (Long, BrushStroke)) =>
+          val img = createGraphics(
+            painting.width, painting.height, PConstants.P3D)
+          img.beginDraw()
+          img.copy(painting, 0, 0, painting.width, painting.height,
+            0, 0, img.width, img.height)
+          img.endDraw()
+          scheduler.schedule {
+            img.save(outputPath + ibs._1 + ".png")
           }
         }
       }

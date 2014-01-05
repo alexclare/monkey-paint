@@ -128,8 +128,11 @@ object MonkeyPaint extends SimpleSwingApplication {
 
       // Generate brush strokes every millisecond (from what I can tell, it can keep up)
       val rate = 1 millisecond
-      val indexedStrokes = Observable.interval(rate).map {
-        (x) => (x, brush.stroke)
+      val indexedStrokes = {
+        val obs = Observable.interval(rate).map {
+          (x) => (x, brush.stroke)
+        }
+        if (maxIterations > 0) obs.take(maxIterations) else obs
       }
 
       def score(stroke: BrushStroke, current: PGraphics) = stroke.points.map { (p) =>
